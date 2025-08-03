@@ -94,9 +94,17 @@ class TimeService {
                 throw new Error(`無效的時間格式: ${input}`);
             }
             
-            // 🔥 核心轉換：轉為台北時間並格式化
-            const taipeiDate = this.toTaipeiTime(date);
-            const result = this.formatDateToString(taipeiDate);
+            // 🔥 核心轉換：直接使用toLocaleString轉換為台北時間
+            const result = date.toLocaleString('zh-TW', {
+                timeZone: 'Asia/Taipei',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).replace(/\//g, '-').replace(',', '');
             
             // 🛡️ 格式驗證：確保結果符合標準
             if (!this.isValidFormat(result)) {
@@ -273,12 +281,12 @@ class TimeService {
     /**
      * 🔧 內部方法：轉換為台北時間
      * 
-     * @param {Date} date - UTC時間的Date對象
+     * @param {Date} date - 輸入的Date對象
      * @returns {Date} 台北時間的Date對象
      */
     static toTaipeiTime(date) {
-        const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
-        const taipeiTime = new Date(utcTime + (this.TIMEZONE_OFFSET * 60000));
+        // 創建一個新的Date對象，加上台北時間的偏移量(UTC+8)
+        const taipeiTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
         return taipeiTime;
     }
     
