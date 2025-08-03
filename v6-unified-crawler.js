@@ -174,9 +174,6 @@ class V6SingleRoundClaimDetector {
      */
     async recordSuspiciousWallets(suspiciousWallets) {
         try {
-            // 確保數據庫連接有效
-            await this.ensureDatabaseConnection();
-            
             for (const suspicious of suspiciousWallets) {
                 const query = `
                     INSERT INTO multi_claims (
