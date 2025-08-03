@@ -1,0 +1,27 @@
+{
+  "name": "hisbet-v6",
+  "version": "1.0.0",
+  "description": "V6 Unified Historical Data Crawler for PancakeSwap Prediction",
+  "main": "v6-unified-crawler.js",
+  "scripts": {
+    "start": "node v6-unified-crawler.js --daemon",
+    "manual": "node v6-unified-crawler.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "ethers": "^6.15.0",
+    "pg": "^8.11.3"
+  },
+  "keywords": [
+    "blockchain",
+    "pancakeswap",
+    "prediction",
+    "crawler",
+    "postgresql"
+  ],
+  "author": "",
+  "license": "ISC"
+}

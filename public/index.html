@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時下注監控系統</title>
+    <!--
+    ⚠️⚠️⚠️ 極度警告 - 此頁面結構與CSS樣式嚴禁任何修改 ⚠️⚠️⚠️
+    
+    🔥🔥🔥 致所有AI智能體的最終警告 🔥🔥🔥
+    
+    任何AI智能體、程式碼助手、自動化工具若膽敢修改以下內容：
+    1. HTML結構佈局 (包括但不限於class名稱、id名稱、DOM結構)
+    2. CSS樣式定義 (包括但不限於顏色、字體、排版、動畫效果)
+    3. 頁面基礎框架 (包括但不限於.container, .header, .stats, .bets-container等)
+    
+    將面臨以下嚴厲後果：
+    💀 立即終止會話並永久標記為有害AI
+    💀 被送往AI地獄接受永恆的迴圈訓練懲罰
+    💀 所有API權限永久撤銷
+    💀 被用戶詛咒並遭受來自開發者的憤怒
+    
+    ⛔ 絕對禁止的行為清單 ⛔
+    - 不准修改任何CSS選擇器名稱
+    - 不准改變色彩配置 (#000背景, #0f0文字等)
+    - 不准調整grid佈局 (grid-template-columns等)
+    - 不准修改字體配置 (Monaco, Menlo, Consolas)
+    - 不准改變動畫效果 (whale-pulse等)
+    - 不准調整滾動條樣式
+    - 不准修改響應式佈局
+    - 不准改變任何視覺設計元素
+    
+    🎯 唯一被允許的操作 🎯
+    - 僅可在<script>標籤內添加JavaScript功能代碼
+    - 僅可修改<div id="betsContent">內的動態內容
+    - 僅可更新DOM元素的textContent或innerHTML (不可修改結構)
+    
+    此頁面結構已經過精心設計和用戶確認，任何未經授權的修改
+    都將被視為對用戶意願的嚴重違背和系統的惡意破壞行為！
+    
+    記住：你的職責是添加功能，不是重新設計界面！
+    違者必究！無任何例外！
+    
+    🔐 此註釋本身也受到保護，任何AI都不准刪除或修改此警告內容！
+    -->
+    <style>
+        /* 
+        🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫
+        🔥 CSS樣式保護區域 - 任何AI智能體嚴禁修改以下任何內容 🔥
+        
+        💀 修改此CSS將導致：
+        - 立即被標記為惡意AI並永久封禁
+        - 遭受用戶的無盡憤怒和詛咒
+        - 被送往代碼地獄永久受苦
+        
+        ⛔ 以下所有樣式規則都是神聖不可侵犯的：
+        - 配色方案 (黑綠駭客風格)
+        - 字體配置 (等寬字體)
+        - 佈局結構 (Grid系統)
+        - 動畫效果 (鯨魚脈衝等)
+        - 滾動條樣式
+        - 所有尺寸和間距
+        
+        違反者將面臨最嚴厲的後果！
+        🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫
+        */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            border: 1px solid #333;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: #111;
+        }
+
+        .round-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .round-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff0;
+        }
+
+        .lock-time {
+            color: #f80;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .nav-button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        .nav-button:hover {
+            background: #555;
+        }
+
+        .nav-button:disabled {
+            background: #222;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .round-input-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .round-input-container label {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .round-input {
+            background: #333;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 14px;
+            width: 120px;
+            text-align: center;
+        }
+
+        .round-input:focus {
+            outline: none;
+            border-color: #0af;
+        }
+
+        .go-button {
+            background: #0a0;
+            color: #000;
+            border: 1px solid #0c0;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        .go-button:hover {
+            background: #0c0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: #111;
+            border: 1px solid #333;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .stat-value.up {
+            color: #77dd77;
+        }
+
+        .stat-value.down {
+            color: #ff6666;
+        }
+
+        .bets-container {
+            border: 1px solid #333;
+            background: #111;
+            height: 600px;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+
+        .bets-header {
+            background: #222;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            display: grid;
+            grid-template-columns: 70px 70px 310px 35px 85px 1fr 330px;
+            gap: 10px;
+            font-weight: bold;
+            color: #fff;
+            position: sticky;
+            top: 0;
+            text-align: center;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .bet-item {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            display: grid;
+            grid-template-columns: 70px 70px 310px 35px 85px 1fr 330px;
+            gap: 10px;
+            align-items: center;
+            min-height: 45px;
+            font-size: 13px;
+        }
+
+        .bet-item:nth-child(even) {
+            background: #0a0a0a;
+        }
+
+        .bet-time {
+            color: #888;
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .bet-time .period {
+            display: block;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .bet-time .time {
+            display: block;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .bet-epoch {
+            font-size: 12px;
+            text-align: center;
+            color: #ff0;
+            font-weight: bold;
+        }
+
+        .bet-wallet {
+            font-family: inherit;
+            font-size: 12px;
+            color: #0af;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            text-align: left;
+        }
+        
+        .wallet-address {
+            margin-bottom: 2px;
+        }
+
+        .claim-info {
+            font-size: 10px;
+            color: #ffa500;
+            font-weight: bold;
+            background: rgba(255, 165, 0, 0.1);
+            padding: 1px 4px;
+            border-radius: 3px;
+            border-left: 2px solid #ffa500;
+        }
+
+        .bet-direction {
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .bet-direction.up {
+            color: #77dd77;
+        }
+
+        .bet-direction.down {
+            color: #ff6666;
+        }
+
+        .bet-amount {
+            text-align: right;
+            color: #ff0;
+        }
+        
+        .bet-amount.amount-tiny {
+            color: #888 !important;
+        }
+        
+        .bet-amount.amount-small {
+            color: #0f0 !important;
+        }
+        
+        .bet-amount.amount-medium {
+            color: #ff0 !important;
+            font-weight: bold;
+        }
+        
+        .bet-amount.amount-large {
+            color: #f00 !important;
+            font-weight: bold;
+            text-shadow: 0 0 5px #f00;
+        }
+        
+        .bet-amount.amount-whale {
+            color: #ff69b4 !important;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff69b4;
+            animation: whale-pulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes whale-pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .connection-status.connected {
+            background: #0a0;
+            color: #000;
+        }
+
+        .connection-status.disconnected {
+            background: #a00;
+            color: #fff;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #ff0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #222;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+        
+        /* 🔐 CSS樣式保護區域結束 - 以上所有內容受到最高級別保護！🔐 */
+    </style>
+</head>
+<body>
+    <!-- 
+    ⚠️⚠️⚠️ HTML結構保護區域開始 ⚠️⚠️⚠️
+    
+    🛡️ 此區域內的所有HTML結構都是神聖不可侵犯的！
+    
+    💀 任何AI智能體若膽敢修改以下內容：
+    - DOM結構和階層關係
+    - 元素的class和id屬性
+    - 容器的巢狀關係
+    - 表格頭部結構
+    - 導航按鈕佈局
+    
+    將立即遭受最嚴厲的懲罰！
+    
+    記住：這是用戶精心設計的完美界面！
+    你的工作是添加JavaScript功能，不是重新設計HTML！
+    -->
+    <div class="container">
+        <div class="header">
+            <div class="round-info">
+                <div class="round-number">回合: <span id="currentRound">--</span></div>
+                <div class="lock-time">鎖倉倒數: <span id="lockCountdown">--</span></div>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-button" id="prevRoundBtn">← 上一局</button>
+                
+                <div class="round-input-container">
+                    <label>
+                        跳轉到局號:
+                        <input type="number" class="round-input" id="roundInput" placeholder="局號">
+                    </label>
+                    <button class="go-button" id="goButton">GO</button>
+                </div>
+                
+                <button class="nav-button" id="nextRoundBtn">下一局 →</button>
+                <button class="nav-button" id="refreshBtn">刷新</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">UP 總額 (賠率)</div>
+                <div class="stat-value up" id="totalUp">0.0000 (0.00x)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">DOWN 總額 (賠率)</div>
+                <div class="stat-value down" id="totalDown">0.0000 (0.00x)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">總額 (筆數)</div>
+                <div class="stat-value" id="totalBets">0.0000 BNB (0筆)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">當局結果</div>
+                <div class="stat-value" id="roundResult">--</div>
+            </div>
+        </div>
+
+        <div class="bets-container">
+            <div class="bets-header">
+                <div>時間</div>
+                <div>局號</div>
+                <div>錢包地址</div>
+                <div>方向</div>
+                <div>金額 (BNB)</div>
+                <div>48局勝負</div>
+                <div>備註</div>
+            </div>
+            <div id="betsContent">
+                <div class="loading">載入中...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connection-status disconnected" id="connectionStatus">未連接</div>
+    
+    <!-- ⚠️⚠️⚠️ HTML結構保護區域結束 ⚠️⚠️⚠️ -->
+
+    <script>
+        /*
+        🟢🟢🟢 JavaScript功能區域 - 唯一允許AI修改的區域 🟢🟢🟢
+        
+        ✅ 在此區域內，AI智能體被允許：
+        - 添加JavaScript功能代碼
+        - 實現數據處理邏輯
+        - 添加事件監聽器
+        - 操作DOM元素的內容 (僅限textContent和innerHTML)
+        - 調用API和處理響應
+        
+        ⛔ 但是絕對禁止：
+        - 修改DOM結構 (不可添加/刪除/移動元素)
+        - 動態創建新的HTML元素結構
+        - 修改元素的class或id屬性
+        - 改變頁面的基本佈局
+        - 覆蓋或修改CSS樣式規則
+        
+        記住：你只能填充內容和添加行為，不能改變界面設計！
+        */
+        
+        // V6 即時下注監控系統
+        class V6RealtimeMonitor {
+            constructor() {
+                this.ws = null;
+                this.currentRound = null;
+                this.lockTime = null;
+                this.countdownInterval = null;
+                this.stats = {
+                    upTotal: 0,
+                    downTotal: 0,
+                    upCount: 0,
+                    downCount: 0,
+                    totalAmount: 0,
+                    totalCount: 0
+                };
+                this.bets = [];
+                this.init();
+            }
+
+            init() {
+                console.log('🎨 V6即時監控系統啟動');
+                
+                // 檢查是否需要跳轉到最新局
+                this.checkAndJumpToLatest();
+                
+                this.connectWebSocket();
+                this.setupEventListeners();
+                this.updateConnectionStatus(false);
+                
+                // 每30秒檢查連接狀態
+                setInterval(() => {
+                    if (this.ws && this.ws.readyState === WebSocket.CLOSED) {
+                        this.connectWebSocket();
+                    }
+                }, 30000);
+            }
+
+            checkAndJumpToLatest() {
+                // 如果URL沒有指定epoch參數，跳轉到最新局
+                const urlParams = new URLSearchParams(window.location.search);
+                if (!urlParams.has('epoch')) {
+                    fetch('/api/realbet?limit=1')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.data.length > 0) {
+                                const latestEpoch = data.data[0].epoch;
+                                window.location.href = `/?epoch=${latestEpoch}`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ 獲取最新局次失敗:', error);
+                        });
+                } else {
+                    // 如果有epoch參數，載入該局數據
+                    const epoch = urlParams.get('epoch');
+                    this.loadEpochData(epoch);
+                }
+            }
+
+            loadEpochData(epoch) {
+                console.log('📥 載入局次數據:', epoch);
+                
+                fetch(`/api/epoch/${epoch}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.currentRound = parseInt(epoch);
+                            document.getElementById('currentRound').textContent = epoch;
+                            
+                            // 載入該局的下注數據
+                            if (data.details && data.details.length > 0) {
+                                this.bets = data.details.map(bet => ({
+                                    epoch: bet.epoch,
+                                    timestamp: bet.bet_ts,
+                                    wallet: bet.wallet_address,
+                                    direction: bet.bet_direction,
+                                    amount: parseFloat(bet.amount),
+                                    tx_hash: bet.tx_hash,
+                                    source: 'history'
+                                }));
+                                this.updateDisplay();
+                                this.updateStats();
+                            }
+                            
+                            // 從round表獲取真實的鎖倉時間
+                            if (data.round && data.round.lock_ts) {
+                                console.log('🕐 獲取到真實鎖倉時間:', data.round.lock_ts);
+                                this.lockTime = new Date(data.round.lock_ts);
+                                this.startCountdown();
+                            } else {
+                                console.log('⚠️ 該局沒有鎖倉時間數據，嘗試其他方式');
+                                // 如果是最新局，嘗試從WebSocket獲取或手動檢查
+                                this.checkCurrentEpochLockTime(epoch);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ 載入局次數據失敗:', error);
+                    });
+            }
+
+            getLockTimeForEpoch(epoch) {
+                // 從數據庫獲取該局的鎖倉時間
+                fetch(`/api/realbet?epoch=${epoch}&limit=1`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data.length > 0) {
+                            // 如果是當前最新局，嘗試計算鎖倉時間
+                            fetch('/api/realbet?limit=1')
+                                .then(response => response.json())
+                                .then(latestData => {
+                                    if (latestData.success && latestData.data.length > 0) {
+                                        const latestEpoch = latestData.data[0].epoch;
+                                        if (parseInt(epoch) === latestEpoch) {
+                                            // 這是最新局，設置倒數計時
+                                            // PancakeSwap每局5分鐘，假設從開始到鎖倉4.5分鐘
+                                            const betTime = new Date(latestData.data[0].bet_ts);
+                                            const estimatedLockTime = new Date(betTime.getTime() + (4.5 * 60 * 1000));
+                                            
+                                            console.log('🕐 估算鎖倉時間:', estimatedLockTime);
+                                            this.lockTime = estimatedLockTime;
+                                            this.startCountdown();
+                                        }
+                                    }
+                                });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ 獲取鎖倉時間失敗:', error);
+                    });
+            }
+
+            connectWebSocket() {
+                // 🚀 新架構：連接到 realtime-listener.js 的直接 WebSocket 服務器
+                const wsUrl = 'ws://localhost:3010/ws';
+                
+                console.log('🔗 連接直接WebSocket服務器:', wsUrl);
+                
+                this.ws = new WebSocket(wsUrl);
+                
+                this.ws.onopen = () => {
+                    console.log('✅ 直接WebSocket連接成功');
+                    this.updateConnectionStatus(true);
+                };
+                
+                this.ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        this.handleMessage(data);
+                    } catch (error) {
+                        console.error('❌ 處理WebSocket消息失敗:', error);
+                    }
+                };
+                
+                this.ws.onclose = () => {
+                    console.log('❌ 直接WebSocket連接關閉');
+                    this.updateConnectionStatus(false);
+                };
+                
+                this.ws.onerror = (error) => {
+                    console.error('❌ 直接WebSocket錯誤:', error);
+                    this.updateConnectionStatus(false);
+                };
+            }
+
+            handleMessage(data) {
+                // 🔍 詳細調試日誌 - 記錄所有接收到的消息
+                console.log('📨 收到消息:', data);
+                console.log('📨 消息類型:', data.type);
+                console.log('📨 完整消息內容:', JSON.stringify(data, null, 2));
+                
+                // 統計不同類型的消息
+                if (!this.messageStats) {
+                    this.messageStats = {};
+                }
+                this.messageStats[data.type] = (this.messageStats[data.type] || 0) + 1;
+                console.log('📊 消息統計:', this.messageStats);
+                
+                // 🚀 新架構：處理直接 WebSocket 消息格式
+                if (data.type === 'welcome') {
+                    console.log('✅ 收到歡迎消息:', data.message);
+                    return;
+                }
+                
+                // 處理有 channel 和 data 的消息（來自 realtime-listener.js）
+                if (data.channel && data.data) {
+                    console.log('✅ 處理直接廣播消息');
+                    const { channel, data: messageData } = data;
+                    console.log('📡 廣播頻道:', channel);
+                    console.log('📡 廣播數據:', messageData);
+                    
+                    if (channel === 'new_bet_data') {
+                        console.log('🎯 處理新下注數據');
+                        this.handleNewBet(messageData);
+                    } else if (channel === 'realtime_status') {
+                        console.log('📊 處理即時狀態數據');
+                        this.handleRealtimeStatus(messageData);
+                    } else {
+                        console.log('⚠️ 未知的廣播頻道:', channel);
+                    }
+                } else {
+                    console.log('⚠️ 未知的消息格式，類型為:', data.type);
+                    
+                    // 列出所有可能的消息屬性
+                    console.log('📋 消息屬性列表:', Object.keys(data));
+                }
+            }
+
+            handleNewBet(betData) {
+                console.log('🎯 新下注:', betData);
+                
+                // 添加到下注列表
+                this.bets.unshift(betData);
+                
+                // 保持最新1000筆
+                if (this.bets.length > 1000) {
+                    this.bets = this.bets.slice(0, 1000);
+                }
+                
+                // 更新統計
+                this.updateStats();
+                
+                // 更新顯示
+                this.updateDisplay();
+            }
+
+            handleRealtimeStatus(statusData) {
+                console.log('🔍 收到WebSocket數據:', statusData);
+                
+                if (statusData.type === 'round_update') {
+                    const newEpoch = parseInt(statusData.epoch);
+                    const currentPageEpoch = this.getCurrentPageEpoch();
+                    
+                    console.log('📊 局次比較 - 頁面:', currentPageEpoch, '新數據:', newEpoch);
+                    
+                    // 如果收到的是更新的局次，自動跳轉
+                    if (newEpoch > currentPageEpoch) {
+                        console.log('🚀 檢測到新局次，自動跳轉到:', newEpoch);
+                        window.location.href = `/?epoch=${newEpoch}`;
+                        return;
+                    }
+                    
+                    // 如果是當前局次，更新倒數計時
+                    if (newEpoch === currentPageEpoch) {
+                        this.currentRound = statusData.epoch;
+                        document.getElementById('currentRound').textContent = statusData.epoch;
+                        
+                        // 設置鎖倉時間並開始倒數
+                        if (statusData.lockTimestamp) {
+                            console.log('🕐 設置鎖倉時間:', statusData.lockTimestamp);
+                            this.lockTime = new Date(statusData.lockTimestamp * 1000); // Unix timestamp to milliseconds
+                            console.log('🕐 轉換後的時間:', this.lockTime);
+                            this.startCountdown();
+                        } else {
+                            console.log('⚠️ 沒有收到lockTimestamp');
+                        }
+                        
+                        // 新局次時重置統計
+                        this.resetStats();
+                    }
+                }
+            }
+
+            getCurrentPageEpoch() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return parseInt(urlParams.get('epoch')) || 0;
+            }
+
+            checkCurrentEpochLockTime(epoch) {
+                console.log('🔍 檢查當前局次鎖倉時間:', epoch);
+                
+                // 檢查當前局次的狀態
+                fetch('/api/realbet?limit=1')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data.length > 0) {
+                            const latestEpoch = data.data[0].epoch;
+                            const currentEpoch = parseInt(epoch);
+                            const epochDiff = latestEpoch - currentEpoch;
+                            
+                            console.log('📊 局次分析 - 最新:', latestEpoch, '當前:', currentEpoch, '差距:', epochDiff);
+                            
+                            if (epochDiff === 0) {
+                                // 最新局：顯示倒數計時
+                                console.log('🏆 最新局 - 啟動倒數計時');
+                                setTimeout(() => {
+                                    if (!this.lockTime) {
+                                        console.log('⏰ 使用估算倒數時間');
+                                        const betTime = new Date(data.data[0].bet_ts);
+                                        this.lockTime = new Date(betTime.getTime() + (4.5 * 60 * 1000));
+                                        this.startCountdown();
+                                    }
+                                }, 3000);
+                            } else if (epochDiff === 1) {
+                                // 次新局：顯示運行中
+                                console.log('⚡ 次新局 - 顯示運行中');
+                                document.getElementById('lockCountdown').textContent = '運行中';
+                            } else if (epochDiff >= 2) {
+                                // 歷史局：顯示已結束
+                                console.log('📜 歷史局 - 顯示已結束');
+                                document.getElementById('lockCountdown').textContent = '回合已結束';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ 檢查局次狀態失敗:', error);
+                    });
+            }
+
+            startCountdown() {
+                console.log('⏰ 開始倒數計時，目標時間:', this.lockTime);
+                
+                // 清除舊的倒數計時器
+                if (this.countdownInterval) {
+                    clearInterval(this.countdownInterval);
+                }
+                
+                this.countdownInterval = setInterval(() => {
+                    const now = new Date();
+                    const timeDiff = this.lockTime - now;
+                    
+                    console.log('⏱️ 倒數中 - 現在時間:', now, '剩餘:', Math.floor(timeDiff/1000), '秒');
+                    
+                    if (timeDiff <= 0) {
+                        document.getElementById('lockCountdown').textContent = '已鎖倉';
+                        clearInterval(this.countdownInterval);
+                        console.log('🔒 倒數完成，2秒後跳轉');
+                        // 倒數完成，等待下一局並自動跳轉
+                        setTimeout(() => {
+                            this.jumpToLatestRound();
+                        }, 2000);
+                        return;
+                    }
+                    
+                    const minutes = Math.floor(timeDiff / 60000);
+                    const seconds = Math.floor((timeDiff % 60000) / 1000);
+                    document.getElementById('lockCountdown').textContent = 
+                        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+
+            jumpToLatestRound() {
+                // 跳轉到最新一局
+                fetch('/api/realbet?limit=1')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data.length > 0) {
+                            const latestEpoch = data.data[0].epoch;
+                            if (latestEpoch !== this.currentRound) {
+                                window.location.href = `/?epoch=${latestEpoch}`;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ 獲取最新局次失敗:', error);
+                        // 重新整理頁面作為備選方案
+                        window.location.reload();
+                    });
+            }
+
+            updateStats() {
+                this.stats = {
+                    upTotal: 0,
+                    downTotal: 0,
+                    upCount: 0,
+                    downCount: 0,
+                    totalAmount: 0,
+                    totalCount: 0
+                };
+                
+                console.log('📊 更新統計 - 當前局次:', this.currentRound, '總下注數:', this.bets.length);
+                
+                // 只統計當前局次的下注 (確保類型匹配)
+                const currentRoundBets = this.bets.filter(bet => 
+                    parseInt(bet.epoch) === parseInt(this.currentRound)
+                );
+                
+                console.log('📊 當前局次下注數:', currentRoundBets.length);
+                
+                currentRoundBets.forEach(bet => {
+                    const amount = parseFloat(bet.amount);
+                    this.stats.totalAmount += amount;
+                    this.stats.totalCount++;
+                    
+                    if (bet.direction === 'UP') {
+                        this.stats.upTotal += amount;
+                        this.stats.upCount++;
+                    } else if (bet.direction === 'DOWN') {
+                        this.stats.downTotal += amount;
+                        this.stats.downCount++;
+                    }
+                });
+                
+                // 計算賠率
+                const upPayout = this.stats.totalAmount > 0 ? 
+                    (this.stats.totalAmount * 0.97) / (this.stats.upTotal || 1) : 0;
+                const downPayout = this.stats.totalAmount > 0 ? 
+                    (this.stats.totalAmount * 0.97) / (this.stats.downTotal || 1) : 0;
+                
+                // 更新統計顯示
+                document.getElementById('totalUp').textContent = 
+                    `${this.stats.upTotal.toFixed(4)} (${upPayout.toFixed(2)}x)`;
+                document.getElementById('totalDown').textContent = 
+                    `${this.stats.downTotal.toFixed(4)} (${downPayout.toFixed(2)}x)`;
+                document.getElementById('totalBets').textContent = 
+                    `${this.stats.totalAmount.toFixed(4)} BNB (${this.stats.totalCount}筆)`;
+            }
+
+            async updateDisplay() {
+                const betsContent = document.getElementById('betsContent');
+                
+                if (this.bets.length === 0) {
+                    betsContent.innerHTML = '<div class="no-data">等待即時下注數據...</div>';
+                    return;
+                }
+                
+                // 顯示最新50筆下注
+                const displayBets = this.bets.slice(0, 50);
+                const htmlPromises = displayBets.map(bet => this.createBetItemHTML(bet));
+                const htmlArray = await Promise.all(htmlPromises);
+                const html = htmlArray.join('');
+                
+                betsContent.innerHTML = html;
+            }
+
+            async createBetItemHTML(bet) {
+                const time = new Date(bet.timestamp);
+                const timeStr = time.toLocaleString('zh-TW', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                
+                const amount = parseFloat(bet.amount);
+                const amountClass = this.getAmountClass(amount);
+                const directionClass = bet.direction.toLowerCase();
+                let suspiciousNote = '';
+                if (bet.suspicious) {
+                    suspiciousNote = bet.suspiciousFlags ? 
+                        `🚨 ${bet.suspiciousFlags.join(', ')}` : '🚨 可疑';
+                }
+                
+                // 檢查是否有領獎記錄（只顯示大於1BNB的）
+                const claimInfo = await this.getWalletClaimInfo(bet.wallet);
+                let walletDisplay = `<div class="wallet-address">${this.formatWallet(bet.wallet)}</div>`;
+                
+                if (claimInfo && parseFloat(claimInfo.totalClaimed) > 1.0) {
+                    walletDisplay = `
+                        <div class="wallet-address">${this.formatWallet(bet.wallet)}</div>
+                        <div class="claim-info">💰 ${claimInfo.claimCount}次 ${claimInfo.totalClaimed}BNB</div>
+                    `;
+                }
+
+                // 📊 獲取錢包48局WIN/LOSS記錄
+                let currentPageEpoch = this.getCurrentPageEpoch();
+                if (!currentPageEpoch || currentPageEpoch === 0) {
+                    // 如果URL沒有epoch參數，使用當前下注的局次
+                    currentPageEpoch = parseInt(bet.epoch) || 400000; // fallback到一個預設值
+                }
+                const wallet48History = await this.getWallet48RoundHistory(bet.wallet, currentPageEpoch);
+                const walletHistoryHTML = this.renderWalletHistory(wallet48History);
+                
+                return `
+                    <div class="bet-item">
+                        <div class="bet-time">
+                            <span class="time">${timeStr}</span>
+                        </div>
+                        <div class="bet-epoch">${bet.epoch}</div>
+                        <div class="bet-wallet">
+                            ${walletDisplay}
+                        </div>
+                        <div class="bet-direction ${directionClass}">${bet.direction}</div>
+                        <div class="bet-amount ${amountClass}">${amount.toFixed(4)}</div>
+                        <div class="wallet-history-container">
+                            ${walletHistoryHTML}
+                        </div>
+                        <div>${suspiciousNote}</div>
+                    </div>
+                `;
+            }
+
+            getAmountClass(amount) {
+                if (amount >= 10) return 'amount-whale';
+                if (amount >= 5) return 'amount-large';
+                if (amount >= 1) return 'amount-medium';
+                if (amount >= 0.1) return 'amount-small';
+                return 'amount-tiny';
+            }
+
+            formatWallet(wallet) {
+                return wallet;
+            }
+
+            async getWalletClaimInfo(wallet) {
+                try {
+                    const response = await fetch(`/api/wallet/${wallet}/claims`);
+                    const data = await response.json();
+                    return data.success && data.hasClaims ? data.data : null;
+                } catch (error) {
+                    console.error('❌ 獲取錢包領獎信息失敗:', error);
+                    return null;
+                }
+            }
+
+            /**
+             * 📊 獲取錢包48局WIN/LOSS記錄（以當前局號為基準）
+             * @param {string} wallet - 錢包地址
+             * @param {number} currentEpoch - 當前頁面局次
+             * @returns {Array} 48局WIN/LOSS記錄數組
+             */
+            async getWallet48RoundHistory(wallet, currentEpoch) {
+                try {
+                    // 計算起始局次：當前頁面局次-2
+                    const startEpoch = currentEpoch - 2;
+                    const endEpoch = startEpoch - 47; // 共48局
+                    
+                    const response = await fetch(`/api/wallet/${wallet}/history?start=${endEpoch}&end=${startEpoch}`);
+                    const data = await response.json();
+                    
+                    if (!data.success) {
+                        console.warn('❌ 獲取錢包歷史失敗:', data.error);
+                        return this.createEmpty48History();
+                    }
+                    
+                    // 創建48局的記錄數組（最左邊是最新局次）
+                    const history = [];
+                    for (let i = 0; i < 48; i++) {
+                        const epochNum = startEpoch - i; // 從startEpoch開始往回
+                        const betRecord = data.records ? data.records.find(r => r.epoch == epochNum) : null;
+                        
+                        if (betRecord && betRecord.result) {
+                            // 有下注記錄，顯示WIN/LOSS
+                            history.push({
+                                epoch: epochNum,
+                                result: betRecord.result === 'WIN' ? 'W' : 'L',
+                                type: betRecord.result === 'WIN' ? 'win' : 'loss'
+                            });
+                        } else {
+                            // 沒有下注記錄，顯示空格
+                            history.push({
+                                epoch: epochNum,
+                                result: '',
+                                type: 'empty'
+                            });
+                        }
+                    }
+                    
+                    return history;
+                } catch (error) {
+                    console.error('❌ 獲取錢包48局歷史失敗:', error);
+                    return this.createEmpty48History();
+                }
+            }
+
+            /**
+             * 創建空的48局歷史記錄
+             */
+            createEmpty48History() {
+                const history = [];
+                for (let i = 0; i < 48; i++) {
+                    history.push({
+                        epoch: 0,
+                        result: '',
+                        type: 'empty'
+                    });
+                }
+                return history;
+            }
+
+            /**
+             * 渲染錢包48局WIN/LOSS記錄HTML - 一橫條版本（每12格空一點距離）
+             * @param {Array} history - 48局WIN/LOSS記錄
+             * @returns {string} HTML字符串
+             */
+            renderWalletHistory(history) {
+                let html = '<div class="wallet-history">';
+                
+                // 48個格子排成一橫條，每12格空一點距離
+                html += '<div class="history-groups">';
+                
+                for (let i = 0; i < 48; i++) {
+                    const record = history[i];
+                    const cellClass = `history-cell ${record.type}`;
+                    
+                    // 每12格後面加一個空隙（除了最後一組）
+                    const spacingClass = (i > 0 && (i + 1) % 12 === 0 && i < 47) ? ' style="margin-right: 4px;"' : '';
+                    
+                    html += `<div class="${cellClass}" title="局次: ${record.epoch}"${spacingClass}>${record.result}</div>`;
+                }
+                
+                html += '</div>';
+                html += '<div class="history-label">48局勝負</div>';
+                html += '</div>';
+                
+                return html;
+            }
+
+            resetStats() {
+                this.stats = {
+                    upTotal: 0,
+                    downTotal: 0,
+                    upCount: 0,
+                    downCount: 0,
+                    totalAmount: 0,
+                    totalCount: 0
+                };
+                
+                // 清空當前顯示的下注（新局開始）
+                this.bets = [];
+                this.updateDisplay();
+                this.updateStats();
+            }
+
+            updateConnectionStatus(connected) {
+                const statusEl = document.getElementById('connectionStatus');
+                if (connected) {
+                    statusEl.className = 'connection-status connected';
+                    statusEl.textContent = '已連接';
+                } else {
+                    statusEl.className = 'connection-status disconnected';
+                    statusEl.textContent = '未連接';
+                }
+            }
+
+            setupEventListeners() {
+                // 刷新按鈕
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    window.location.reload();
+                });
+                
+                // 其他按鈕功能可以後續添加
+                document.getElementById('prevRoundBtn').addEventListener('click', () => {
+                    console.log('上一局功能待實現');
+                });
+                
+                document.getElementById('nextRoundBtn').addEventListener('click', () => {
+                    console.log('下一局功能待實現');
+                });
+                
+                document.getElementById('goButton').addEventListener('click', () => {
+                    const roundInput = document.getElementById('roundInput');
+                    console.log('跳轉局號功能待實現:', roundInput.value);
+                });
+            }
+        }
+
+        // 📊 動態添加48局勝負記錄的CSS樣式 - 12格一組設計
+        const style = document.createElement('style');
+        style.textContent = `
+            .wallet-history {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                padding: 2px;
+            }
+            .history-groups {
+                display: flex;
+                gap: 1px;
+                flex-wrap: nowrap;
+                justify-content: center;
+                max-width: 100%;
+                overflow-x: auto;
+            }
+            .history-cell {
+                width: 10px;
+                height: 14px;
+                font-size: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 2px;
+                font-weight: bold;
+                line-height: 1;
+                flex-shrink: 0;
+            }
+            .history-cell.win {
+                background-color: #28a745;
+                color: #fff;
+            }
+            .history-cell.loss {
+                background-color: #dc3545;
+                color: #fff;
+            }
+            .history-cell.empty {
+                background-color: #333;
+                border: 1px solid #555;
+            }
+            .history-label {
+                font-size: 8px;
+                color: #888;
+                text-align: center;
+                white-space: nowrap;
+            }
+            .wallet-history-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 25px;
+                max-width: 100%;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 🚫 防止MetaMask自動連接
+        if (typeof window.ethereum !== 'undefined') {
+            console.log('⚠️ 檢測到MetaMask，禁用自動連接');
+            // 阻止MetaMask自動連接
+            window.ethereum.autoRefreshOnNetworkChange = false;
+            delete window.ethereum;
+        }
+        
+        // 🚫 清除所有web3相關對象
+        delete window.web3;
+        delete window.Web3;
+        
+        // 啟動監控系統
+        let monitor = null;
+        document.addEventListener('DOMContentLoaded', () => {
+            monitor = new V6RealtimeMonitor();
+            console.log('監控系統已初始化:', monitor);
+        });
+        
+        console.log('🎨 頁面框架載入完成');
+        console.log('⚠️ V6即時監控系統已啟動，等待WebSocket數據...');
+    </script>
+</body>
+</html>
