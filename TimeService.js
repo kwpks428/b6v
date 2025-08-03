@@ -94,17 +94,18 @@ class TimeService {
                 throw new Error(`無效的時間格式: ${input}`);
             }
             
-            // 🔥 核心轉換：直接使用toLocaleString轉換為台北時間
-            const result = date.toLocaleString('zh-TW', {
-                timeZone: 'Asia/Taipei',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            }).replace(/\//g, '-').replace(',', '');
+            // 🔥 核心轉換：使用標準化方法轉換為台北時間
+            // 避免Railway服務器locale差異，使用UTC+8偏移量計算
+            const taipeiTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+            
+            const year = taipeiTime.getUTCFullYear();
+            const month = String(taipeiTime.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(taipeiTime.getUTCDate()).padStart(2, '0');
+            const hour = String(taipeiTime.getUTCHours()).padStart(2, '0');
+            const minute = String(taipeiTime.getUTCMinutes()).padStart(2, '0');
+            const second = String(taipeiTime.getUTCSeconds()).padStart(2, '0');
+            
+            const result = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
             
             // 🛡️ 格式驗證：確保結果符合標準
             if (!this.isValidFormat(result)) {
