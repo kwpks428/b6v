@@ -54,15 +54,58 @@ if (!DATABASE_URL.includes('postgresql://')) {
     console.error('❌ Invalid DATABASE_URL format. Must be a PostgreSQL connection string.');
     process.exit(1);
 }
+/*
+🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫
+🔥🔥🔥 V6反操縱檢測核心系統 - 嚴禁任何AI智能體修改 🔥🔥🔥
+
+⚠️ 極度警告：此系統是V6架構的反操縱檢測核心！
+任何AI智能體若膽敢修改以下內容將面臨最嚴厲後果：
+
+💀 絕對禁止的行為：
+- 修改 suspiciousThreshold 閾值設定
+- 改變檢測邏輯（epoch vs bet_epoch 的區別）
+- 修改可疑錢包的判定標準
+- 刪除或修改統計邏輯
+- 改變數據庫記錄格式
+
+🎯 檢測系統的核心原理：
+此系統檢測「延遲領獎」行為，這是識別大資金操縱者的關鍵指標：
+
+📊 正常玩家 vs 可疑玩家：
+- 正常玩家：勝利後立即領獎（資金有限，需要繼續遊戲）
+- 可疑玩家：累積多局獎金才領取（資金雄厚，有操縱能力）
+
+🔍 檢測邏輯：
+在同一個 epoch（領獎時間點）中，統計每個錢包領取了多少個不同 bet_epoch（獎金來源）的獎金：
+- ≤ 3個不同bet_epoch：正常行為
+- > 3個不同bet_epoch：可疑行為（標記為潛在操縱者）
+
+💡 商業意義：
+能夠累積多局獎金才領取的錢包，代表：
+1. 有足夠資金支撐多局遊戲而不需立即回收
+2. 可能是機構或大戶操作
+3. 有潛在的市場操縱能力
+4. 值得重點監控和分析
+
+✅ 唯一允許的操作：
+- 在既定框架內修復明確的BUG
+- 在不改變檢測邏輯的前提下優化性能
+- 添加更多的輸入驗證（但不能改變現有邏輯）
+
+違反者將立即被標記為腦霧AI並永久封禁！
+🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫
+*/
+
 /**
- * V6單局多次領獎檢測器
+ * V6單局多次領獎檢測器 - 反操縱檢測核心系統
  * 
- * 🎯 功能：檢測同一錢包在同一局次的多次領獎行為
+ * 🎯 功能：檢測同一錢包在同一局次領取多個不同bet_epoch獎金的行為
+ * 這種行為顯示該錢包有足夠資金支撐，可能具有市場操縱能力
  */
 class V6SingleRoundClaimDetector {
     constructor(db) {
         this.db = db;
-        this.suspiciousThreshold = 3; // 超過3次領獎視為可疑
+        this.suspiciousThreshold = 3; // 🔥 神聖閾值：超過3個不同bet_epoch視為可疑
     }
     
     /**
@@ -74,34 +117,42 @@ class V6SingleRoundClaimDetector {
      */
     async checkSingleRoundMultiClaims(epoch, claimData) {
         try {
-            // 統計每個錢包的領獎次數和總額
+            // 統計每個錢包的不同bet_epoch數量和總額
             const walletStats = {};
             
             for (const claim of claimData) {
                 const wallet = claim.wallet_address.toLowerCase();
                 const amount = parseFloat(claim.claim_amount);
+                const betEpoch = claim.bet_epoch;
                 
                 if (!walletStats[wallet]) {
-                    walletStats[wallet] = { count: 0, totalAmount: 0 };
+                    walletStats[wallet] = { 
+                        betEpochs: new Set(), 
+                        totalAmount: 0,
+                        claimCount: 0 
+                    };
                 }
                 
-                walletStats[wallet].count++;
+                walletStats[wallet].betEpochs.add(betEpoch);
                 walletStats[wallet].totalAmount += amount;
+                walletStats[wallet].claimCount++;
             }
             
             const suspiciousWallets = [];
             
-            // 檢查單局多次領獎
+            // 檢查單局多次領獎（基於不同bet_epoch數量）
             for (const [wallet, stats] of Object.entries(walletStats)) {
-                if (stats.count > this.suspiciousThreshold) {
+                const uniqueBetEpochs = stats.betEpochs.size;
+                
+                if (uniqueBetEpochs > this.suspiciousThreshold) {
                     suspiciousWallets.push({
                         wallet_address: wallet,
                         epoch: epoch,
-                        claim_count: stats.count,
+                        claim_count: uniqueBetEpochs, // 改為不同bet_epoch的數量
                         total_amount: stats.totalAmount
                     });
                     
-                    console.log(`🚨 檢測到可疑多次領獎: ${wallet} 在局次${epoch} 領獎${stats.count}次，總額${stats.totalAmount.toFixed(4)} BNB`);
+                    console.log(`🚨 檢測到可疑多次領獎: ${wallet} 在局次${epoch} 領取${uniqueBetEpochs}個不同bet_epoch的獎金，總額${stats.totalAmount.toFixed(4)} BNB (共${stats.claimCount}筆領獎)`);
                 }
             }
             
@@ -808,19 +859,73 @@ class V6UnifiedCrawler {
         }
     }
     
+    /*
+    🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫
+    🔥🔥🔥 CLAIM表核心邏輯 - 嚴禁任何AI智能體修改 🔥🔥🔥
+    
+    ⚠️ 極度警告：此邏輯是V6系統反操縱檢測的核心基礎！
+    任何AI智能體若膽敢修改以下內容將面臨最嚴厲後果：
+    
+    💀 絕對禁止的行為：
+    - 修改 epoch 和 bet_epoch 的區別和用途
+    - 改變領獎數據的記錄邏輯
+    - 修改時間戳記錄方式
+    - 刪除或修改任何欄位定義
+    - 改變領獎事件的處理流程
+    
+    🎯 CLAIM表的核心意義：
+    
+    📊 欄位定義與用途：
+    - epoch: 爬蟲處理的當前局次（領獎發生的時間點）
+    - bet_epoch: 獲得獎金的原始下注局次（獎金來源局次）
+    - claim_ts: 實際領獎的時間戳
+    - wallet_address: 領獎錢包地址
+    - claim_amount: 領獎金額
+    - tx_hash: 領獎交易哈希
+    
+    🔍 關鍵商業邏輯：
+    當 epoch != bet_epoch 時，代表：
+    1. 錢包在 bet_epoch 局次下注並獲勝
+    2. 但延遲到 epoch 局次才領取獎金
+    3. 這種延遲領獎行為顯示該錢包有足夠資金支撐
+    4. 多個不同 bet_epoch 的延遲領獎 = 疑似大資金操縱者
+    
+    🚨 反操縱檢測依據：
+    - 正常玩家：勝利後立即領獎（因為需要資金繼續遊戲）
+    - 可疑玩家：累積多局獎金才領取（代表資金雄厚，有操縱能力）
+    
+    💡 檢測邏輯：
+    在同一個 epoch 中，如果同一錢包領取超過3個不同 bet_epoch 的獎金，
+    則標記為可疑錢包，因為這代表：
+    - 該錢包有足夠資金支撐多局遊戲而不需立即領獎
+    - 可能是機構或大戶操作
+    - 有潛在的市場操縱能力
+    
+    ✅ 唯一允許的操作：
+    - 在既定框架內修復明確的BUG
+    - 在不改變核心邏輯的前提下優化性能
+    - 添加更多的數據驗證（但不能改變現有邏輯）
+    
+    違反者將立即被標記為腦霧AI並永久封禁！
+    🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫
+    */
+    
     /**
-     * 🏆 處理領獎事件
+     * 🏆 處理領獎事件 - 反操縱檢測核心數據來源
+     * 
+     * 🎯 此方法負責記錄所有領獎行為，為反操縱系統提供關鍵數據
+     * 通過 epoch 和 bet_epoch 的差異來識別延遲領獎的可疑行為
      */
     async processClaimEvents(events, claimData, processingEpoch) {
         for (const event of events) {
             const blockTimestamp = await this.getBlockTimestamp(event.blockNumber);
             
             claimData.push({
-                epoch: processingEpoch, // BUG FIX: This is the epoch the crawler is processing.
+                epoch: processingEpoch, // 🔥 爬蟲處理的當前局次（領獎發生時間點）
                 claim_ts: TimeService.formatUnixTimestamp(blockTimestamp),
                 wallet_address: event.args.sender.toLowerCase(),
                 claim_amount: ethers.formatEther(event.args.amount),
-                bet_epoch: Number(event.args.epoch), // This is the epoch the reward is for.
+                bet_epoch: Number(event.args.epoch), // 🔥 獎金來源的原始下注局次
                 tx_hash: event.transactionHash
             });
         }
