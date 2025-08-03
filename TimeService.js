@@ -1,5 +1,3 @@
-const moment = require('moment-timezone');
-
 /*
 🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫🚫
 🔥🔥🔥 V6系統核心時間服務 - 任何AI智能體嚴禁修改 🔥🔥🔥
@@ -31,13 +29,14 @@ const moment = require('moment-timezone');
 */
 
 /**
- * V6系統統一時間處理服務
+ * V6系統統一時間處理服務 (Railway優化版本 - 無外部依賴)
  * 
  * 🎯 核心原則：
  * 1. 所有時間格式統一為台北時間 YYYY-MM-DD HH:mm:ss
  * 2. 不包含毫秒、時區標記等額外信息
  * 3. 靜態方法設計，無需實例化
  * 4. 嚴格輸入驗證，防止格式混亂
+ * 5. 使用Node.js原生API，無外部依賴
  * 
  * 🔧 應用範圍：
  * - round表: start_ts, lock_ts, close_ts
@@ -56,8 +55,8 @@ class TimeService {
         return 'YYYY-MM-DD HH:mm:ss';
     }
     
-    static get TIMEZONE() {
-        return 'Asia/Taipei';
+    static get TIMEZONE_OFFSET() {
+        return 8 * 60; // 台北時間 UTC+8，以分鐘為單位
     }
     
     /**
@@ -74,25 +73,30 @@ class TimeService {
         }
         
         try {
-            let momentObj;
+            let date;
             
             // 處理Unix時間戳（數字）
             if (typeof input === 'number') {
                 // 自動判斷是秒還是毫秒
-                momentObj = input > 1e10 ? moment(input) : moment.unix(input);
+                date = input > 1e10 ? new Date(input) : new Date(input * 1000);
             }
-            // 處理Date對象或字符串
+            // 處理Date對象
+            else if (input instanceof Date) {
+                date = new Date(input);
+            }
+            // 處理字符串
             else {
-                momentObj = moment(input);
+                date = new Date(input);
             }
             
-            // 驗證moment對象有效性
-            if (!momentObj.isValid()) {
+            // 驗證日期對象有效性
+            if (isNaN(date.getTime())) {
                 throw new Error(`無效的時間格式: ${input}`);
             }
             
             // 🔥 核心轉換：轉為台北時間並格式化
-            const result = momentObj.tz(this.TIMEZONE).format(this.STANDARD_FORMAT);
+            const taipeiDate = this.toTaipeiTime(date);
+            const result = this.formatDateToString(taipeiDate);
             
             // 🛡️ 格式驗證：確保結果符合標準
             if (!this.isValidFormat(result)) {
@@ -114,7 +118,7 @@ class TimeService {
      * @returns {string} 當前台北時間 YYYY-MM-DD HH:mm:ss
      */
     static getCurrentTaipeiTime() {
-        return moment().tz(this.TIMEZONE).format(this.STANDARD_FORMAT);
+        return this.formatTaipeiTime(new Date());
     }
     
     /**
@@ -128,7 +132,7 @@ class TimeService {
             throw new Error('Unix時間戳必須是數字');
         }
         
-        return moment.unix(unixTimestamp).tz(this.TIMEZONE).format(this.STANDARD_FORMAT);
+        return this.formatTaipeiTime(unixTimestamp);
     }
     
     /**
@@ -138,7 +142,7 @@ class TimeService {
      * @returns {Date} 台北時區的Date對象
      */
     static createTaipeiDate(date = new Date()) {
-        return moment(date).tz(this.TIMEZONE).toDate();
+        return this.toTaipeiTime(new Date(date));
     }
     
     /**
@@ -162,8 +166,30 @@ class TimeService {
         }
         
         // 進一步驗證日期有效性
-        const parsed = moment(timeString, this.STANDARD_FORMAT, true);
-        return parsed.isValid();
+        const parts = timeString.split(' ');
+        const datePart = parts[0].split('-');
+        const timePart = parts[1].split(':');
+        
+        const year = parseInt(datePart[0]);
+        const month = parseInt(datePart[1]);
+        const day = parseInt(datePart[2]);
+        const hour = parseInt(timePart[0]);
+        const minute = parseInt(timePart[1]);
+        const second = parseInt(timePart[2]);
+        
+        // 驗證範圍
+        if (year < 1970 || year > 9999) return false;
+        if (month < 1 || month > 12) return false;
+        if (day < 1 || day > 31) return false;
+        if (hour < 0 || hour > 23) return false;
+        if (minute < 0 || minute > 59) return false;
+        if (second < 0 || second > 59) return false;
+        
+        // 創建日期驗證
+        const testDate = new Date(year, month - 1, day, hour, minute, second);
+        return testDate.getFullYear() === year &&
+               testDate.getMonth() === month - 1 &&
+               testDate.getDate() === day;
     }
     
     /**
@@ -215,16 +241,24 @@ class TimeService {
     static getTimeInfo(input) {
         try {
             const formatted = this.formatTaipeiTime(input);
-            const momentObj = moment(input);
+            let date;
+            
+            if (typeof input === 'number') {
+                date = input > 1e10 ? new Date(input) : new Date(input * 1000);
+            } else {
+                date = new Date(input);
+            }
+            
+            const isValid = !isNaN(date.getTime());
             
             return {
                 input: input,
                 inputType: typeof input,
                 formatted: formatted,
-                unix: momentObj.unix(),
-                utc: momentObj.utc().format(),
-                taipei: momentObj.tz(this.TIMEZONE).format(),
-                isValid: momentObj.isValid()
+                unix: Math.floor(date.getTime() / 1000),
+                utc: date.toISOString(),
+                taipei: formatted,
+                isValid: isValid
             };
         } catch (error) {
             return {
@@ -234,6 +268,35 @@ class TimeService {
                 isValid: false
             };
         }
+    }
+    
+    /**
+     * 🔧 內部方法：轉換為台北時間
+     * 
+     * @param {Date} date - UTC時間的Date對象
+     * @returns {Date} 台北時間的Date對象
+     */
+    static toTaipeiTime(date) {
+        const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
+        const taipeiTime = new Date(utcTime + (this.TIMEZONE_OFFSET * 60000));
+        return taipeiTime;
+    }
+    
+    /**
+     * 🔧 內部方法：將Date對象格式化為字符串
+     * 
+     * @param {Date} date - Date對象
+     * @returns {string} YYYY-MM-DD HH:mm:ss 格式字符串
+     */
+    static formatDateToString(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hour = String(date.getHours()).padStart(2, '0');
+        const minute = String(date.getMinutes()).padStart(2, '0');
+        const second = String(date.getSeconds()).padStart(2, '0');
+        
+        return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
     }
 }
 
