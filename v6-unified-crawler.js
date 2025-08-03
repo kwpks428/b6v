@@ -728,7 +728,14 @@ class V6UnifiedCrawler {
             // 絕對不准改成任何其他時間戳
             // 🔥🔥🔥 只有這樣才能抓到完整的跨局次數據！🔥🔥🔥
             // ⚠️⚠️⚠️ 【🔥嚴重警告🔥】：絕對禁止修改區塊範圍計算邏輯！⚠️⚠️⚠️
-            const currentStartTime = roundData.raw_start_timestamp; // 🔥 修復：使用原始Unix時間戳，確保與nextStartTime格式一致
+            
+            // 🔥 統一邏輯：開始時間和結束時間使用完全相同的獲取方式
+            // 直接從智能合約獲取原始Unix時間戳，避免任何時區轉換問題
+            const currentRound = await this.retryRequest(
+                () => this.contract.rounds(epoch),
+                `重新獲取局次 ${epoch} 開始時間`
+            );
+            const currentStartTime = Number(currentRound.startTimestamp);
             const nextStartTime = nextEpochStartTime;
             
             console.log(`📅 局次 ${epoch} 時間範圍: ${TimeService.formatUnixTimestamp(currentStartTime)} → ${TimeService.formatUnixTimestamp(nextStartTime)}`);
