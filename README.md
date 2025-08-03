@@ -1,125 +1,114 @@
-# 🚀 V6 b6v 版本
+# 🚀 V6 Data Extraction System (b6v)
 
-這個資料夾包含了V6系統的所有新開發文件，使用全新的b6v數據庫。
+Railway-ready deployment of V6 PancakeSwap prediction data extraction system.
 
-## 📁 文件結構
+## 🚀 Quick Start
 
-### 🔧 基礎設施層
-- `TimeService.js` - 統一時間處理服務，台北時間標準化
-- `v6-database-schema.sql` - 完整的數據庫結構定義
+### Local Testing
+```bash
+# Test the system
+node test-crawler.js
 
-### 📊 數據庫資訊
-- **數據庫**: b6v (neondb)
-- **連接字符串**: `postgresql://neondb_owner:npg_QnreOCZz48UL@ep-wispy-meadow-a19m39a6-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
-- **時區**: Asia/Taipei
+# Start historical data crawler
+./start-hisbet.sh
 
-### 🎯 核心設計原則
-
-#### 1. 命名標準化
-- ✅ 表名統一使用**單數**：`round`, `hisbet`, `realbet`, `claim`
-- ✅ 方向統一使用 **UP/DOWN**，嚴禁 bull/bear 等變體
-- ✅ 時間格式統一：**YYYY-MM-DD HH:mm:ss** (台北時間)
-
-#### 2. 數據類型標準化
-- ✅ 金額使用 **NUMERIC** 避免浮點誤差
-- ✅ 時間使用 **TIMESTAMP** 不含時區標記
-- ✅ 方向使用 **CHECK約束** 強制UP/DOWN
-
-#### 3. 表結構說明
-
-**主表**:
-- `round` - 局次主表，含結果和賠率
-- `hisbet` - 歷史下注 (含WIN/LOSS結果)
-- `realbet` - 即時下注暫存 (無結果)
-- `claim` - 領獎記錄
-
-**輔助表**:
-- `multi_round_claimer` - 🆕 多局領獎異常檢測
-- `wallet_note` - 錢包備註
-- `failed_epoch` - 失敗局次記錄
-
-### 🔄 數據流設計
-
-#### 🚀 雙線程歷史抓取流 (v6-unified-crawler.js)
-```
-📚 主線任務（歷史回補）:
-   - 啟動：立即開始
-   - 範圍：當前局次-2 → 一路往回
-   - 邏輯：有數據跳過，無數據回補  
-   - 重啟：每30分鐘重啟一次
-
-📊 支線任務（最新檢查）:
-   - 啟動：程序運行5分鐘後開始
-   - 範圍：當前局次-2 到 -6 (固定5局)
-   - 頻率：每5分鐘執行一次
-   - 目的：確保最新數據不遺漏
-
-數據流向：區塊鏈事件 → round/hisbet/claim表 → multi_round_claimer檢測 → 清理realbet
+# Start realtime data listener  
+./start-realbet.sh
 ```
 
-#### WebSocket即時流  
+### Railway Deployment
+1. Connect this GitHub repository to Railway
+2. Add PostgreSQL database service
+3. Deploy automatically with included configuration
+
+## 📊 System Components
+
+### 🔧 Core Services
+- **hisbet**: Historical data crawler (`v6-unified-crawler.js`)
+- **realbet**: Realtime data listener (`realtime-listener.js`)
+
+### 🔧 Infrastructure
+- `TimeService.js` - Unified time handling (Taipei timezone)
+- `abi.json` - Smart contract ABI
+- `package.json` - Dependencies and scripts
+- `railway.json` - Railway deployment config
+
+### 📊 Database Architecture
+- **Database**: PostgreSQL 17 (Neon/Railway)
+- **Timezone**: Asia/Taipei
+- **Tables**: `round`, `hisbet`, `realbet`, `claim`, `multi_claims`
+
+## 🎯 Features
+
+### Historical Data Crawler
+- ✅ Dual-thread system (main + support threads)
+- ✅ Auto-restart every 30 minutes
+- ✅ Data integrity validation
+- ✅ Rate limiting (100 req/s)
+- ✅ Automatic error recovery
+
+### Realtime Data Listener  
+- ✅ WebSocket blockchain monitoring
+- ✅ Suspicious wallet detection
+- ✅ Duplicate bet prevention
+- ✅ Auto-reconnection
+- ✅ WebSocket server (port 3010)
+
+## 🔄 Data Flow
+
 ```
-realtime-listener.js → realbet表 → PostgreSQL NOTIFY → 前端
+Historical: Blockchain events → round/hisbet/claim tables → cleanup realbet
+Realtime: WebSocket events → realbet table → WebSocket clients
 ```
 
-### 🛡️ 防腦霧AI保護
+## 🚀 Railway Environment Variables
 
-所有V6文件都包含嚴厲的保護性註釋，特別針對最容易被修改的關鍵部位：
+Automatically configured by Railway:
+- `DATABASE_URL` - PostgreSQL connection string
+- `PORT` - Application port
+- `RAILWAY_ENVIRONMENT` - Deployment environment
 
-#### 🔥 RPC節點保護
-- 絕對禁止修改drpc.org高級節點URL
-- 絕對禁止修改100 req/s的請求速度限制
-- 任何修改將承擔節點被封鎖的嚴重後果
+Optional custom variables:
+- `V6_RPC_URL` - Custom RPC node (defaults to drpc.org)
+- `V6_DATABASE_URL` - Custom database URL
 
-#### 🔥 時間範圍抓取保護  
-- 絕對禁止修改【當局開始→下局開始】的時間範圍
-- 絕對禁止改成當局開始→當局結束
-- 絕對禁止改成鎖倉時間→結束時間
-- 只有正確時間範圍才能抓到完整跨局次數據
+## 📈 Monitoring
 
-#### 🔥 二分查找算法保護
-- 絕對禁止修改二分查找核心算法
-- 絕對禁止改成線性查找（會導致超時）
-- 絕對禁止修改循環條件和中點計算
-- 保證O(log n)時間複雜度的精確區塊定位
+### Health Checks
+- Historical crawler: Processes epochs and reports statistics
+- Realtime listener: WebSocket connections and bet processing
+- Database: Connection status and query performance
 
-#### 🔥 雙線程時間設定保護
-- 主線重啟間隔：30分鐘（絕對不准修改）
-- 支線啟動延遲：5分鐘（絕對不准修改）
-- 支線執行間隔：5分鐘（絕對不准修改）
-- 處理間隔時間：2秒（絕對不准修改）
+### Key Metrics
+- 📊 Processed rounds
+- 💰 Extracted bets  
+- 🏆 Claim records
+- 🚨 Suspicious wallets detected
+- ❌ Error counts
 
-#### 🔥 任務範圍邏輯保護
-- 主線起始點：當前局次-2（絕對不准修改）
-- 主線方向：checkEpoch--往回遞減（絕對不准修改）
-- 支線範圍：當前-2到-6共5局（絕對不准修改）
-- 循環邏輯：for(i=2; i<=6; i++)（絕對不准修改）
+## 🛠️ Troubleshooting
 
-#### 🔥 核心架構保護
-- 修改UP/DOWN標準為bull/bear等
-- 改變台北時間格式標準  
-- 破壞表名單數化規則
-- 修改數據完整性驗證邏輯
+### Common Issues
+1. **Database connection failed**: Check `DATABASE_URL` environment variable
+2. **Blockchain connection failed**: Verify RPC node accessibility  
+3. **Port conflicts**: Check ports 3008 (hisbet) and 3010 (realbet)
 
-### 📋 開發待辦
+### Logs to Monitor
+- 🚀 Startup information
+- ✅ Successful data processing
+- 📊 Processing statistics
+- 🚨 Suspicious activity alerts
+- ❌ Error messages and retries
 
-- [ ] 創建 ConnectionManager 統一連接管理
-- [ ] 創建 Repository 層數據存取
-- [ ] 實現領域服務層
-- [ ] 建立控制層API接口
+## 📋 Deployment Checklist
 
-### 🎉 已完成
-
-- [x] ✅ TimeService 統一時間處理
-- [x] ✅ 數據庫Schema設計
-- [x] ✅ Schema部署到b6v數據庫
-- [x] ✅ 表結構驗證 (7表/33索引/22約束/2視圖)
-- [x] ✅ V6 realtime-listener.js 即時數據監聽
-- [x] ✅ V6 v6-unified-crawler.js 雙線程歷史數據爬蟲
+- [x] ✅ Railway configuration files
+- [x] ✅ Database schema ready
+- [x] ✅ Environment variables configured
+- [x] ✅ Health monitoring enabled
+- [x] ✅ Auto-scaling configured
+- [x] ✅ Error recovery implemented
 
 ---
 
-**⚠️ 重要提醒**：
-- 此資料夾的所有文件都受到V6架構保護
-- 任何AI智能體都不准修改核心設計原則
-- 所有開發都必須遵循統一標準化規範
+**Ready for Railway deployment** 🚂
