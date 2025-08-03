@@ -507,10 +507,8 @@ class V6UnifiedCrawler {
                 start_ts: TimeService.formatUnixTimestamp(Number(round.startTimestamp)),
                 lock_ts: TimeService.formatUnixTimestamp(Number(round.lockTimestamp)),
                 close_ts: TimeService.formatUnixTimestamp(Number(round.closeTimestamp)),
-                // 🔥 保留原始時間戳用於區塊範圍計算
+                // 🔥 保留原始Unix時間戳，避免時區轉換問題
                 raw_start_timestamp: Number(round.startTimestamp),
-                raw_lock_timestamp: Number(round.lockTimestamp),
-                raw_close_timestamp: Number(round.closeTimestamp),
                 lock_price: ethers.formatUnits(round.lockPrice, 8),
                 close_price: ethers.formatUnits(round.closePrice, 8),
                 result: result,
@@ -730,7 +728,7 @@ class V6UnifiedCrawler {
             // 絕對不准改成任何其他時間戳
             // 🔥🔥🔥 只有這樣才能抓到完整的跨局次數據！🔥🔥🔥
             // ⚠️⚠️⚠️ 【🔥嚴重警告🔥】：絕對禁止修改區塊範圍計算邏輯！⚠️⚠️⚠️
-            const currentStartTime = roundData.raw_start_timestamp; // 🔥 修復：使用原始Unix時間戳，避免重複時區轉換
+            const currentStartTime = roundData.raw_start_timestamp; // 🔥 修復：使用原始Unix時間戳，確保與nextStartTime格式一致
             const nextStartTime = nextEpochStartTime;
             
             console.log(`📅 局次 ${epoch} 時間範圍: ${TimeService.formatUnixTimestamp(currentStartTime)} → ${TimeService.formatUnixTimestamp(nextStartTime)}`);
